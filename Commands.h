@@ -1,0 +1,335 @@
+// Ver: 04-11-2025
+#ifndef SMASH_COMMAND_H_
+#define SMASH_COMMAND_H_
+
+#include <vector>
+#include <map>
+#include <memory>
+#include <list>
+
+#define COMMAND_MAX_LENGTH (200)
+#define COMMAND_MAX_ARGS (20)
+#define BUFFER_MAX 4096
+
+class JobsList;
+class JobEntry;
+int _parseCommandLine(const char *cmd_line, char **args);
+
+class Command {
+    
+public:
+    char** argv;
+    int argc;
+    std::string cmdString;
+
+    Command(const char *cmd_line, std::string cmdString);
+
+    virtual ~Command();
+
+    virtual void execute() = 0;
+
+    std::string getString();
+
+    //virtual void prepare();
+    //virtual void cleanup();
+    // TODO: Add your extra methods if needed
+};
+
+class BuiltInCommand : public Command {
+public:
+    BuiltInCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~BuiltInCommand();
+};
+
+class ExternalCommand : public Command {
+
+public:
+    JobsList *jobs;
+    bool isBg;
+    std::string realCommand;
+    int* fgPID;
+
+    ExternalCommand(const char *cmd_line, std::string cmdString, JobsList *jobs, bool isBg, int* fgPID);
+
+    virtual ~ExternalCommand() {
+    }
+
+    void execute() override;
+};
+
+
+class RedirectionCommand : public Command {
+public:
+    std::string commandLine;
+    std::string filePath;
+    bool isOverride ;
+
+    RedirectionCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~RedirectionCommand() {
+    }
+
+    void execute() override;
+};
+
+class PipeCommand : public Command {
+public:
+    std::string command1;
+    std::string command2;
+    bool isBg;
+
+    PipeCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~PipeCommand() {
+    }
+
+    void execute() override;
+};
+
+class DiskUsageCommand : public Command {
+public:
+    bool isError;
+    DiskUsageCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~DiskUsageCommand() {
+    }
+
+    int recursivelyGetUsage(std::string path);
+
+    void execute() override;
+};
+
+class WhoAmICommand : public Command {
+public:
+    WhoAmICommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~WhoAmICommand() {
+    }
+
+    void execute() override;
+};
+
+class USBInfoCommand : public Command {
+private:
+    struct UsbDevice {
+        int devnum;
+        std::string vendorID;
+        std::string productID;
+        std::string manufacturer;
+        std::string productName;
+        std::string maxPower;
+    };
+    std::string readUsbFile(std::string path);
+
+public:
+    USBInfoCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~USBInfoCommand() {}
+
+    void execute() override;
+};
+
+class ChangeDirCommand : public BuiltInCommand {
+private:
+    char** plastPwd;
+public:
+
+    // TODO: Add your data members public:
+    ChangeDirCommand(const char *cmd_line, std::string cmdString, char **plastPwd);
+
+    virtual ~ChangeDirCommand();
+
+    void execute() override;
+};
+
+class GetCurrDirCommand : public BuiltInCommand {
+public:
+    // TODO: Add your data members public:
+    GetCurrDirCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~GetCurrDirCommand() {
+    }
+
+    void execute() override;
+};
+
+class ShowPidCommand : public BuiltInCommand {
+public:
+    ShowPidCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~ShowPidCommand() {
+    }
+
+    void execute() override;
+};
+
+
+
+class QuitCommand : public BuiltInCommand {
+public:
+    JobsList *jobs;
+
+    QuitCommand(const char *cmd_line, std::string cmdString, JobsList *jobs);
+    virtual ~QuitCommand() {
+    }
+
+    void execute() override;
+};
+
+class JobsList {
+public:
+    class JobEntry {
+    public:
+        std::string cmdLine;
+        Command* cmd;
+        pid_t pid;
+    JobEntry(Command* cmd, int pid, std::string cmdLine);
+                                                       
+    ~JobEntry();
+    };
+
+    std::map<int , std::unique_ptr<JobEntry>> jobMap;
+    int maxJobID;
+ 
+    JobsList() : maxJobID(0) {}
+
+    ~JobsList();
+
+    void addJob(Command *cmd, int pid);
+
+    void printJobsList();
+
+    void killAllJobs();
+
+    void removeFinishedJobs();
+
+    JobEntry* getJobById(int jobId);
+
+    void removeJobById(int jobId);
+
+    JobEntry *getLastJob(int *lastJobId);
+
+    JobEntry *getLastStoppedJob(int *jobId);
+
+    int getMaxJobID();
+    // TODO: Add extra methods or modify exisitng ones as needed
+
+
+};
+
+class JobsCommand : public BuiltInCommand {
+    JobsList* jobs;
+public:
+    JobsCommand(const char *cmd_line, std::string cmdString, JobsList *jobs);
+
+    virtual ~JobsCommand() {
+    }
+
+    void execute() override;
+};
+
+class KillCommand : public BuiltInCommand {
+    JobsList* jobs;
+public:
+    KillCommand(const char *cmd_line, std::string cmdString, JobsList *jobs);
+
+    virtual ~KillCommand() {
+    }
+
+    void execute() override;
+};
+
+class ForegroundCommand : public BuiltInCommand {
+public:
+    JobsList* jobs;
+    int* fgPID;
+
+    ForegroundCommand(const char *cmd_line, std::string cmdString, JobsList *jobs, int* fgPID);
+
+    virtual ~ForegroundCommand() {
+    }
+
+    void execute() override;
+};
+
+class AliasCommand : public BuiltInCommand {
+public:
+    std::map<std::string, std::string> *aliasMap;
+    std::list<std::string> *aliasList;
+    AliasCommand(const char *cmd_line, std::string cmdString, std::map<std::string , std::string>* aliasMap,
+                    std::list<std::string>* aliasList );
+
+    virtual ~AliasCommand() {
+    }
+
+    void execute() override;
+};
+
+class UnAliasCommand : public BuiltInCommand {
+public:
+    std::map<std::string, std::string> *aliasMap;
+    std::list<std::string> *aliasList;
+    UnAliasCommand(const char *cmd_line, std::string cmdString, std::map<std::string, std::string>* aliasMap, std::list<std::string>* aliasList);
+
+    virtual ~UnAliasCommand() {
+    }
+
+    void execute() override;
+};
+
+class UnSetEnvCommand : public BuiltInCommand {
+public:
+    UnSetEnvCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~UnSetEnvCommand() {
+    }
+
+    void execute() override;
+};
+
+class SysInfoCommand : public BuiltInCommand {
+public:
+    SysInfoCommand(const char *cmd_line, std::string cmdString);
+
+    virtual ~SysInfoCommand() {
+    }
+    int read_from_file(const char* filepath, char* buffer, size_t size);
+
+    void execute() override;
+};
+
+class SmallShell {
+private:
+    // TODO: Add your data members
+    char *plastPwd;
+    JobsList* jobs;
+    std::map<std::string , std::string> aliasMap;
+    std::list<std::string> aliasList;
+    int fgPID;
+
+    SmallShell();
+public:
+    
+    Command *CreateCommand(const char *cmd_line);
+
+    SmallShell(SmallShell const &) = delete; // disable copy ctor
+    void operator=(SmallShell const &) = delete; // disable = operator
+    static SmallShell &getInstance() // make SmallShell singleton
+    {
+        static SmallShell instance; // Guaranteed to be destroyed.
+        // Instantiated on first use.
+        return instance;
+    }
+
+    ~SmallShell();
+
+    void executeCommand(const char *cmd_line);
+
+    char* getplastPwd();
+
+    int getForegroundPid();
+
+};
+
+#endif //SMASH_COMMAND_H_
