@@ -1343,13 +1343,13 @@ void USBInfoCommand::execute() {
         perror("smash error: close failed");
     }
 
-    for (auto it = devicesList.begin(); it != devicesList.end(); ) {
-        if (it->devnum < 2) {
-            it = devicesList.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    // for (auto it = devicesList.begin(); it != devicesList.end(); ) {
+    //     if (it->devnum < 2) {
+    //         it = devicesList.erase(it);
+    //     } else {
+    //         ++it;
+    //     }
+    // }
 
 
 
