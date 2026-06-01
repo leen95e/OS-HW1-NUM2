@@ -802,74 +802,152 @@ int SysInfoCommand::read_from_file(const char* filepath, char* buffer, size_t si
     return bytes_read;
 }
 
+// void SysInfoCommand::execute() {
+//     char buffer[BUFFER_MAX];
+
+//     int rc = read_from_file("/proc/stat", buffer, sizeof(buffer));
+//     if (rc == -1) {
+//         perror("smash error: open failed");
+//         return;
+//     } else if (rc == -2) {
+//         perror("smash error: close failed");
+//         return;
+//     } else if (rc == -3) {
+//         perror("smash error: read failed");
+//         return;
+//     }
+
+//     char* p = strstr(buffer, "btime ");
+//     if (p != NULL) {
+//         p += 6; // skip past "btime "
+//         time_t boot_time_t = (time_t) atol(p);
+//         struct tm* boot_tm = localtime(&boot_time_t);
+//         char time_buffer[80];
+//         strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", boot_tm);
+//         std::cout << "Boot Time: " << time_buffer << std::endl;
+//     }
+//     // if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -1) {
+//     //     perror("smash error: open failed"); 
+//     //     return;
+//     // } else if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -2){
+//     //     perror("smash error: close failed"); 
+//     //     return;
+//     // }else if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -3){
+//     //     perror("smash error: read failed"); 
+//     //     return;
+//     // }
+//     // std::cout << "System: " << buffer << std::endl;
+
+//     // if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -1) {
+//     //     perror("smash error: open failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -2) {
+//     //     perror("smash error: close failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -3) {
+//     //     perror("smash error: read failed");
+//     //     return;
+//     // }
+
+//     // std::cout << "Hostname: " << buffer << std::endl;
+
+//     // if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -1) {
+//     //     perror("smash error: open failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -2) {
+//     //     perror("smash error: close failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -3) {
+//     //     perror("smash error: read failed");
+//     //     return;
+//     // }
+
+//     // std::cout << "Kernel: " << buffer << std::endl;
+
+//     // std::cout << "Architecture: x86_64" << std::endl;
+
+//     // if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -1) {
+//     //     perror("smash error: open failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -2) {
+//     //     perror("smash error: close failed");
+//     //     return;
+//     // }else if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -3) {
+//     //     perror("smash error: read failed");
+//     //     return;
+//     // }
+//     // //////////////////////////////// time //////////////////
+//     // char* space_pos = strchr(buffer, ' ');
+//     // if (space_pos != NULL) {
+//     //     *space_pos = '\0';
+//     // }
+
+//     // double uptime_seconds = atof(buffer); // המרה למספר
+//     // time_t current_time = time(NULL);
+//     // time_t boot_time_t = current_time - (time_t)uptime_seconds;
+//     // struct tm* boot_tm = localtime(&boot_time_t);
+//     // char time_buffer[80];
+    
+//     // strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", boot_tm);
+//     // std::cout << "Boot Time: " << time_buffer << std::endl;
+// }
+
+
+static void strip_newline(char* buf) {
+    size_t len = strlen(buf);
+    if (len > 0 && buf[len-1] == '\n') buf[len-1] = '\0';
+}
+
 void SysInfoCommand::execute() {
     char buffer[BUFFER_MAX];
+    int rc;
 
-    if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -1) {
-        perror("smash error: open failed"); 
-        return;
-    } else if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -2){
-        perror("smash error: close failed"); 
-        return;
-    }else if (read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer)) == -3){
-        perror("smash error: read failed"); 
-        return;
-    }
+    // System
+    rc = read_from_file("/proc/sys/kernel/ostype", buffer, sizeof(buffer));
+    if (rc == -1) { perror("smash error: open failed"); return; }
+    else if (rc == -2) { perror("smash error: close failed"); return; }
+    else if (rc == -3) { perror("smash error: read failed"); return; }
+    strip_newline(buffer);
     std::cout << "System: " << buffer << std::endl;
 
-    if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -1) {
-        perror("smash error: open failed");
-        return;
-    }else if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -2) {
-        perror("smash error: close failed");
-        return;
-    }else if (read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer)) == -3) {
-        perror("smash error: read failed");
-        return;
-    }
-
+    // Hostname
+    rc = read_from_file("/proc/sys/kernel/hostname", buffer, sizeof(buffer));
+    if (rc == -1) { perror("smash error: open failed"); return; }
+    else if (rc == -2) { perror("smash error: close failed"); return; }
+    else if (rc == -3) { perror("smash error: read failed"); return; }
+    strip_newline(buffer);
     std::cout << "Hostname: " << buffer << std::endl;
 
-    if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -1) {
-        perror("smash error: open failed");
-        return;
-    }else if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -2) {
-        perror("smash error: close failed");
-        return;
-    }else if (read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer)) == -3) {
-        perror("smash error: read failed");
-        return;
-    }
-
+    // Kernel
+    rc = read_from_file("/proc/sys/kernel/osrelease", buffer, sizeof(buffer));
+    if (rc == -1) { perror("smash error: open failed"); return; }
+    else if (rc == -2) { perror("smash error: close failed"); return; }
+    else if (rc == -3) { perror("smash error: read failed"); return; }
+    strip_newline(buffer);
     std::cout << "Kernel: " << buffer << std::endl;
 
+    // Architecture
     std::cout << "Architecture: x86_64" << std::endl;
 
-    if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -1) {
-        perror("smash error: open failed");
-        return;
-    }else if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -2) {
-        perror("smash error: close failed");
-        return;
-    }else if (read_from_file("/proc/uptime", buffer, sizeof(buffer)) == -3) {
-        perror("smash error: read failed");
-        return;
-    }
-    //////////////////////////////// time //////////////////
-    char* space_pos = strchr(buffer, ' ');
-    if (space_pos != NULL) {
-        *space_pos = '\0';
-    }
+    // Boot Time
+    rc = read_from_file("/proc/stat", buffer, sizeof(buffer));
+    if (rc == -1) { perror("smash error: open failed"); return; }
+    else if (rc == -2) { perror("smash error: close failed"); return; }
+    else if (rc == -3) { perror("smash error: read failed"); return; }
 
-    double uptime_seconds = atof(buffer); // המרה למספר
-    time_t current_time = time(NULL);
-    time_t boot_time_t = current_time - (time_t)uptime_seconds;
-    struct tm* boot_tm = localtime(&boot_time_t);
-    char time_buffer[80];
-    
-    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", boot_tm);
-    std::cout << "Boot Time: " << time_buffer << std::endl;
+    char* p = strstr(buffer, "btime ");
+    if (p != NULL) {
+        p += 6;
+        time_t boot_time_t = (time_t) atol(p);
+        struct tm* boot_tm = localtime(&boot_time_t);
+        char time_buffer[80];
+        strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", boot_tm);
+        std::cout << "Boot Time: " << time_buffer << std::endl;
+    }
 }
+
+
+
 
 RedirectionCommand::RedirectionCommand(const char *cmd_line, std::string cmdString) : Command(cmd_line, cmdString)
 {

@@ -1,5 +1,5 @@
 # TODO: replace ID with your own IDs, for example: 123456789_123456789
-SUBMITTERS := 213473861_214636615
+SUBMITTERS := 213473861_326158144
 COMPILER := g++
 COMPILER_FLAGS := --std=c++11 -Wall -g
 SRCS := Commands.cpp signals.cpp smash.cpp
